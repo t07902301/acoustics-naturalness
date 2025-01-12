@@ -52,6 +52,10 @@ class nisqaModel(object):
             self._evaluate_mos(mapping=mapping, do_print=do_print, do_plot=do_plot)      
             
     def predict(self):
+        '''
+        Return example:
+        {"deg":{"0":"bad.wav"},"mos_pred":{"0":2.4996817112}}
+        '''
         print('---> Predicting ...')
         if self.args['tr_parallel']:
             self.model = nn.DataParallel(self.model)           
@@ -71,14 +75,9 @@ class nisqaModel(object):
                 self.dev,
                 num_workers=self.args['tr_num_workers'])                 
                     
-        if self.args['output_dir']:
-            self.ds_val.df['model'] = self.args['name']
-            self.ds_val.df.to_csv(
-                os.path.join(self.args['output_dir'], 'NISQA_results.csv'), 
-                index=False)
-            
-        print(self.ds_val.df.to_string(index=False))
-        return self.ds_val.df
+        return self.ds_val.df.to_dict()
+        # return self.ds_val.df.to_dict(index=False)
+        # return self.ds_val.df
 
     def _train_mos(self):
         '''
@@ -935,7 +934,7 @@ class nisqaModel(object):
                 model_path = os.path.join(self.args['pretrained_model'])
             else:
                 model_path = os.path.join(os.getcwd(), self.args['pretrained_model'])
-            checkpoint = torch.load(model_path, map_location=self.dev)
+            checkpoint = torch.load(model_path, map_location=self.dev, weights_only=True)
             
             # update checkpoint arguments with new arguments
             checkpoint['args'].update(self.args)
