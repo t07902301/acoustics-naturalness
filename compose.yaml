@@ -1,0 +1,29 @@
+name: naturalness_evaluator
+services:
+  models:
+    build: speech_assessment
+    command: ["flask", "run", "--host=0.0.0.0", "--port=6000", "--debug"]
+    environment:
+      - FLASK_ENV=development
+      - FLASK_APP=app.py
+    ports:
+      - "6000:6000"
+    volumes:
+      - ./speech_assessment:/models       # Mount local directory to container for live updates
+      - ./audios:/data
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:6000/health"]
+      interval: 600s
+      timeout: 60s
+      # retries: 1
+      start_period: 10s
+    # restart: always
+    # volumes:
+    #   - ./speech_assessment/file_buffer:/app/file_buffer
+    # networks:
+    #   - speech-coach_shared_network
+# networks:
+#   speech-coach_shared_network:
+#     external: true
+# volumes:
+#   file_buffer:

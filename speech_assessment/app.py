@@ -4,7 +4,7 @@
 """
 import warnings
 warnings.filterwarnings('ignore')
-from nisqa.NISQA_model import nisqaModel
+# from nisqa.NISQA_model import nisqaModel
 from flask import Flask, abort, request, jsonify
 import logging
 app = Flask(__name__)
@@ -12,44 +12,17 @@ from flask_cors import CORS
 import os
 from flask import json
 from werkzeug.exceptions import HTTPException
-cors = CORS(app, resources={r"/*": {"origins": "http://localhost:5000"}})
+from audio_judge import compute_similarity
+cors = CORS(app, resources={r"/*": {"origins": ["http://localhost:5000"]}})
 app.logger.setLevel(logging.INFO)
 app.logger.info("Start the Server")
 
-@app.route('/assess', methods=['POST'])
-def predict_mos():
-    if 'audio' not in request.files:
-        return jsonify({'error': 'No audio file provided'}), 400
-    audio = request.files['audio']
-    app.logger.info(f"Receive {audio.filename}")
+from werkzeug.datastructures import FileStorage
+def generate_audio_file(audio: FileStorage, name: str) -> str:
+    audio_path = os.path.join('file_buffer', name + '.wav')
+    audio.save(audio_path)
+    return audio_path
 
-    audio_file = os.path.join('../file_buffer', audio.filename)
-    audio.save(audio_file) # Save the FileStorage Object to the temporary file.
-    app.logger.info(f"Save to {audio_file}")
-
-    args = {
-        "deg": audio_file,
-        "mode": "predict_file",
-        "pretrained_model": "weights/nisqa_tts.tar",
-        "num_workers": 0,
-        "bs": 1,
-        "tr_bs_val": 1,
-        "tr_num_workers": 0,
-        "ms_channel": None,
-        "data_dir": None,
-        "output_dir": None,
-        "csv_file": None,
-        "csv_deg": None
-    }
-    try:
-        nisqa = nisqaModel(args)
-        results = nisqa.predict()
-        return jsonify({'score': results["mos_pred"][0]})
-    except Exception as e:
-        abort(500, str(e))
-    finally:
-        os.remove(audio_file)
-        app.logger.info(f"Remove {audio_file}")
 
 @app.errorhandler(HTTPException)
 def handle_exception(e):
@@ -62,27 +35,39 @@ def handle_exception(e):
     response.content_type = "application/json"
     return response
 
+@app.route('/api/similarity_scores', methods=['POST'])
+def get_similarity_scores():
+    query_audio = request.files["query_audio"]
+    ref_audio = request.files["reference_audio"]
+    query_audio_path = generate_audio_file(query_audio, 'query')
+    ref_audio_path = generate_audio_file(ref_audio, 'ref')
+    try:
+        response = compute_similarity(query_audio_path, ref_audio_path)
+    except Exception as e:
+        app.logger.error(e)
+        abort(500, str(e))
+    finally:
+        os.remove(query_audio_path)
+        os.remove(ref_audio_path)
+    if response.status != 200:
+        abort(response.status, response.message)
+    return jsonify({'score': response.score})
+
+# @app.route('/health', methods=['GET'])
+# def healthcheck():
+#     try:
+#         app.logger.info("Health Checking")
+#         response = compute_similarity(os.path.join('file_buffer', 'bad.wav'),\
+#                            os.path.join('file_buffer', 'generated.wav'))
+#         app.logger.info(f"Score: {response.score}")
+#     except Exception as e:
+#         app.logger.error(e)
+#         abort(500, str(e))
+#     if response.status != 200:
+#         abort(response.status, response.message)
+#     return jsonify({'score': response.score})
+
 if __name__ == '__main__':
-      app.run(host='0.0.0.0', port=6000)
+      app.run(host='0.0.0.0', port=6000, debug=True)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+      
