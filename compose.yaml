@@ -1,4 +1,4 @@
-name: naturalness_evaluator
+name: speech_assessment
 services:
   models:
     build: speech_assessment
@@ -10,7 +10,7 @@ services:
       - "6000:6000"
     volumes:
       - ./speech_assessment:/models       # Mount local directory to container for live updates
-      - ./audios:/data
+      # - ./audios:/data
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost:6000/health"]
       interval: 600s
@@ -20,10 +20,10 @@ services:
     # restart: always
     # volumes:
     #   - ./speech_assessment/file_buffer:/app/file_buffer
-    # networks:
-    #   - speech-coach_shared_network
-# networks:
-#   speech-coach_shared_network:
-#     external: true
+    networks:
+      - speech-coach-backend
+networks:
+  speech-coach-backend:
+    external: true
 # volumes:
 #   file_buffer:

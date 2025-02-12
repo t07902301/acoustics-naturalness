@@ -2,24 +2,28 @@
 """
 @author: Gabriel Mittag, TU-Berlin
 """
+
 import warnings
-warnings.filterwarnings('ignore')
-# from nisqa.NISQA_model import nisqaModel
-from flask import Flask, abort, request, jsonify
-import logging
-app = Flask(__name__)
 from flask_cors import CORS
 import os
 from flask import json
 from werkzeug.exceptions import HTTPException
 from audio_judge import compute_similarity
-cors = CORS(app, resources={r"/*": {"origins": ["http://localhost:5000"]}})
+from flask import Flask, abort, request, jsonify
+import logging
+from werkzeug.datastructures import FileStorage
+
+warnings.filterwarnings("ignore")
+# from nisqa.NISQA_model import nisqaModel
+
+app = Flask(__name__)
+
+cors = CORS(app, resources={r"/*": {"origins": ["http://tutor-dev-backend-1:5000", "http://tutor-staging-backend-1:5000", "http://tutor-prod-backend-1:5000"]}})
 app.logger.setLevel(logging.INFO)
 app.logger.info("Start the Server")
 
-from werkzeug.datastructures import FileStorage
 def generate_audio_file(audio: FileStorage, name: str) -> str:
-    audio_path = os.path.join('file_buffer', name + '.wav')
+    audio_path = os.path.join("file_buffer", name + ".wav")
     audio.save(audio_path)
     return audio_path
 
@@ -27,20 +31,22 @@ def generate_audio_file(audio: FileStorage, name: str) -> str:
 @app.errorhandler(HTTPException)
 def handle_exception(e):
     response = e.get_response()
-    response.data = json.dumps({
-        "code": e.code,
-        "name": e.name,
-        "description": e.description,
-    })
+    response.data = json.dumps(
+        {
+            "code": e.code,
+            "name": e.name,
+            "description": e.description,
+        }
+    )
     response.content_type = "application/json"
     return response
 
-@app.route('/api/similarity_scores', methods=['POST'])
+@app.route("/api/similarity_scores", methods=["POST"])
 def get_similarity_scores():
     query_audio = request.files["query_audio"]
     ref_audio = request.files["reference_audio"]
-    query_audio_path = generate_audio_file(query_audio, 'query')
-    ref_audio_path = generate_audio_file(ref_audio, 'ref')
+    query_audio_path = generate_audio_file(query_audio, "query")
+    ref_audio_path = generate_audio_file(ref_audio, "ref")
     try:
         response = compute_similarity(query_audio_path, ref_audio_path)
     except Exception as e:
@@ -51,23 +57,24 @@ def get_similarity_scores():
         os.remove(ref_audio_path)
     if response.status != 200:
         abort(response.status, response.message)
-    return jsonify({'score': response.score})
+    return jsonify({"score": response.score})
 
-# @app.route('/health', methods=['GET'])
-# def healthcheck():
-#     try:
-#         app.logger.info("Health Checking")
-#         response = compute_similarity(os.path.join('file_buffer', 'bad.wav'),\
-#                            os.path.join('file_buffer', 'generated.wav'))
-#         app.logger.info(f"Score: {response.score}")
-#     except Exception as e:
-#         app.logger.error(e)
-#         abort(500, str(e))
-#     if response.status != 200:
-#         abort(response.status, response.message)
-#     return jsonify({'score': response.score})
 
-if __name__ == '__main__':
-      app.run(host='0.0.0.0', port=6000, debug=True)
+@app.route("/health", methods=["GET"])
+def healthcheck():
+    try:
+        app.logger.info("Health Checking")
+        response = compute_similarity(
+            os.path.join("file_buffer", "bad.wav"),
+            os.path.join("file_buffer", "generated.wav"),
+        )
+    except Exception as e:
+        app.logger.error(e)
+        abort(500, str(e))
+    if response.status != 200:
+        abort(response.status, response.message)
+    return jsonify({"score": response.score})
 
-      
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=6000, debug=True)
