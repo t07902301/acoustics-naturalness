@@ -14,7 +14,6 @@ import logging
 from werkzeug.datastructures import FileStorage
 
 warnings.filterwarnings("ignore")
-# from nisqa.NISQA_model import nisqaModel
 
 app = Flask(__name__)
 

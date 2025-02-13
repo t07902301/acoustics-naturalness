@@ -1,0 +1,12 @@
+name: speech_assessment_prod
+services:
+  models:
+    build: speech_assessment
+    environment:
+      - FLASK_ENV=production
+    command: ["gunicorn", "-b", "0.0.0.0:6000", "app:app"]
+    networks:
+      - speech-coach-backend
+networks:
+  speech-coach-backend:
+    external: true
