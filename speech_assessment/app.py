@@ -29,15 +29,7 @@ def generate_audio_file(audio: FileStorage, name: str) -> str:
 
 @app.errorhandler(HTTPException)
 def handle_exception(e):
-    response = e.get_response()
-    response.data = json.dumps(
-        {
-            "code": e.code,
-            "name": e.name,
-            "description": e.description,
-        }
-    )
-    response.content_type = "application/json"
+    response = jsonify({'message': e.description, 'code': e.code})
     return response
 
 @app.route("/api/similarity_scores", methods=["POST"])
