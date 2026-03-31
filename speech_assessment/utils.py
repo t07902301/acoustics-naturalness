@@ -13,7 +13,7 @@ class ScoreResponse(pydantic.BaseModel):
     message: str = "Success"
     status: int = 200
 
-def compute_similarity(query_audio_file: str, ref_audio_file: str) -> ScoreResponse:
+def compute_discrepancy(query_audio_file: str, ref_audio_file: str) -> ScoreResponse:
     # Load query audio file
     try:
         query_time_series, query_sample_rate = librosa.load(query_audio_file)
@@ -56,7 +56,7 @@ def compute_similarity(query_audio_file: str, ref_audio_file: str) -> ScoreRespo
     except Exception:
         log.error(f"{ref_audio_file} too short: {ref_mfcc.shape[1]}")
         return ScoreResponse(message="the synthetic audio is too short", status=500)
-    # Compute similarity score
+    # Compute discrepancy score
     score = np.round(compute_dtw(query_mfcc.T[:, 1:], ref_mfcc.T[:, 1:]),2)
     return ScoreResponse(score=score)
 
