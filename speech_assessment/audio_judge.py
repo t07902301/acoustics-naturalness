@@ -57,12 +57,12 @@ def compute_similarity(query_audio_file: str, ref_audio_file: str) -> ScoreRespo
         log.error(f"{ref_audio_file} too short: {ref_mfcc.shape[1]}")
         return ScoreResponse(message="the synthetic audio is too short", status=500)
     # Compute similarity score
-    score = np.round(normalize_dtw(query_mfcc.T[:, 1:], ref_mfcc.T[:, 1:]),2)
+    score = np.round(compute_dtw(query_mfcc.T[:, 1:], ref_mfcc.T[:, 1:]),2)
     return ScoreResponse(score=score)
 
-def normalize_dtw(query: np.ndarray, ref: np.ndarray) -> float:
+def compute_dtw(query: np.ndarray, ref: np.ndarray) -> float:
     """
-    Min-max normalizes DTW distance to range [0, 1].
+    Compute the average cost of the optimal path when aligning two sequences by Dynamic Time Warping (DTW).
     """
     dist, _, _, path = dtw(query, ref, dist=lambda x, y: norm(x - y))
     avg_cost = dist / len(path[0])
