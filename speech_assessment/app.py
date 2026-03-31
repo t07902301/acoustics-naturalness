@@ -32,7 +32,7 @@ def handle_exception(e):
     response = jsonify({'message': e.description, 'code': e.code})
     return response
 
-@app.route("/api/discrepancy_scores", methods=["POST"])
+@app.route("/api/discrepancy_score", methods=["POST"])
 def get_discrepancy_scores():
     query_audio = request.files["query_audio"]
     ref_audio = request.files["reference_audio"]
