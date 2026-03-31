@@ -7,7 +7,7 @@ This repository provides a custom implementation of audio evaluation methods, sp
 MFCCs are a representation of the short-term power spectrum of a sound. They are commonly used in speech and audio processing because they effectively capture the timbral aspects of audio signals. 
 
 ## Dynamic Time Warping (DTW)
-DTW is a dynamic-programming-based algorithm for measuring similarity between two temporal sequences that may vary in speed. It's useful for aligning audio signals that may have been recorded at different speeds or have varying lengths. Here's an outline of how DTW works:
+DTW is a dynamic-programming-based algorithm for measuring discrepancy between two temporal sequences that may vary in speed. It's useful for aligning audio signals that may have been recorded at different speeds or have varying lengths. Here's an outline of how DTW works:
 
 ### Key Steps in DTW:
 1. **Cost Matrix Initialization**: Create a matrix to store the cumulative cost.

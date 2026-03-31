@@ -8,7 +8,7 @@ from flask_cors import CORS
 import os
 from flask import json
 from werkzeug.exceptions import HTTPException
-from audio_judge import compute_similarity
+from utils import compute_discrepancy
 from flask import Flask, abort, request, jsonify
 import logging
 from werkzeug.datastructures import FileStorage
@@ -32,14 +32,14 @@ def handle_exception(e):
     response = jsonify({'message': e.description, 'code': e.code})
     return response
 
-@app.route("/api/similarity_scores", methods=["POST"])
-def get_similarity_scores():
+@app.route("/api/discrepancy_score", methods=["POST"])
+def get_discrepancy_score():
     query_audio = request.files["query_audio"]
     ref_audio = request.files["reference_audio"]
     query_audio_path = generate_audio_file(query_audio, "query")
     ref_audio_path = generate_audio_file(ref_audio, "ref")
     try:
-        response = compute_similarity(query_audio_path, ref_audio_path)
+        response = compute_discrepancy(query_audio_path, ref_audio_path)
     except Exception as e:
         app.logger.error(e)
         abort(500, str(e))
@@ -55,7 +55,7 @@ def get_similarity_scores():
 def healthcheck():
     try:
         app.logger.info("Health Checking")
-        response = compute_similarity(
+        response = compute_discrepancy(
             os.path.join("file_buffer", "bad.wav"),
             os.path.join("file_buffer", "generated.wav"),
         )
