@@ -33,7 +33,7 @@ def handle_exception(e):
     return response
 
 @app.route("/api/discrepancy_score", methods=["POST"])
-def get_discrepancy_scores():
+def get_discrepancy_score():
     query_audio = request.files["query_audio"]
     ref_audio = request.files["reference_audio"]
     query_audio_path = generate_audio_file(query_audio, "query")
