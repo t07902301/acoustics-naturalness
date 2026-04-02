@@ -21,11 +21,24 @@ cors = CORS(app, resources={r"/*": {"origins": ["http://tutor-dev-backend-1:5000
 app.logger.setLevel(logging.INFO)
 app.logger.info("Start the Server")
 
-def generate_audio_file(audio: FileStorage, name: str) -> str:
-    audio_path = os.path.join("file_buffer", name + ".wav")
-    audio.save(audio_path)
-    return audio_path
+from pydub import AudioSegment
+import io
 
+def load_fileStorage(audio: FileStorage, name: str) -> str:
+    current_path = os.path.dirname(os.path.abspath(__file__))
+    audio_path = os.path.join(current_path, "file_buffer", f"{name}.wav")
+    
+    # Read the file data into memory
+    file_bytes = audio.read()
+    
+    # Load the audio data regardless of the input format
+    # This automatically detects if it's webm, ogg, wav, etc.
+    audio_segment = AudioSegment.from_file(io.BytesIO(file_bytes))
+    
+    # Export as a standardized WAV
+    audio_segment.export(audio_path, format="wav")
+    
+    return audio_path
 
 @app.errorhandler(HTTPException)
 def handle_exception(e):
@@ -36,16 +49,16 @@ def handle_exception(e):
 def get_discrepancy_score():
     query_audio = request.files["query_audio"]
     ref_audio = request.files["reference_audio"]
-    query_audio_path = generate_audio_file(query_audio, "query")
-    ref_audio_path = generate_audio_file(ref_audio, "ref")
+    query_audio_path = load_fileStorage(query_audio, "query")
+    ref_audio_path = load_fileStorage(ref_audio, "ref")
     try:
         response = compute_discrepancy(query_audio_path, ref_audio_path)
     except Exception as e:
         app.logger.error(e)
         abort(500, str(e))
-    finally:
-        os.remove(query_audio_path)
-        os.remove(ref_audio_path)
+    # finally:
+    #     os.remove(query_audio_path)
+    #     os.remove(ref_audio_path)
     if response.status != 200:
         abort(response.status, response.message)
     return jsonify({"score": response.score})
