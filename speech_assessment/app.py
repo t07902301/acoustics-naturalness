@@ -6,12 +6,13 @@
 import warnings
 from flask_cors import CORS
 import os
-from flask import json
 from werkzeug.exceptions import HTTPException
 from utils import compute_discrepancy
 from flask import Flask, abort, request, jsonify
 import logging
 from werkzeug.datastructures import FileStorage
+from pydub import AudioSegment
+import io
 
 warnings.filterwarnings("ignore")
 
@@ -21,8 +22,7 @@ cors = CORS(app, resources={r"/*": {"origins": ["http://tutor-dev-backend-1:5000
 app.logger.setLevel(logging.INFO)
 app.logger.info("Start the Server")
 
-from pydub import AudioSegment
-import io
+
 
 def load_fileStorage(audio: FileStorage, name: str) -> str:
     current_path = os.path.dirname(os.path.abspath(__file__))

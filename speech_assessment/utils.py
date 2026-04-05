@@ -3,12 +3,12 @@ from numpy.linalg import norm
 import numpy as np
 from dtw.dtw import dtw
 import logging
-import pydantic
+from pydantic import BaseModel
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
 
-class ScoreResponse(pydantic.BaseModel):
+class ScoreResponse(BaseModel):
     score: float = 0.0
     message: str = "Success"
     status: int = 200
