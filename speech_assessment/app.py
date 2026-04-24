@@ -38,8 +38,11 @@ def get_discrepancy_score():
     ref_audio = request.files["reference_audio"]
     query_audio_path = generate_audio_file(query_audio, "query")
     ref_audio_path = generate_audio_file(ref_audio, "ref")
+    query_span = request.form.get("query_span")
+    ref_span = request.form.get("ref_span")
     try:
-        response = compute_discrepancy(query_audio_path, ref_audio_path)
+        response = compute_discrepancy(query_audio_path, ref_audio_path, query_span=json.loads(query_span) if query_span else None, ref_span=json.loads(ref_span) if ref_span else None)
+        app.logger.info(f"Computed discrepancy score: {response.score}")
     except Exception as e:
         app.logger.error(e)
         abort(500, str(e))
@@ -47,8 +50,8 @@ def get_discrepancy_score():
         os.remove(query_audio_path)
         os.remove(ref_audio_path)
     if response.status != 200:
-        abort(response.status, response.message)
-    return jsonify({"score": response.score})
+        app.logger.error(f"Error computing discrepancy score: {response.message}")
+    return jsonify({"score": response.score, "message": response.message, "status": response.status})
 
 
 @app.route("/health", methods=["GET"])
