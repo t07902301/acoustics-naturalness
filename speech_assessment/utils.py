@@ -62,8 +62,8 @@ def compute_discrepancy(query_audio_file: str, ref_audio_file: str) -> ScoreResp
 
 def compute_dtw(query: np.ndarray, ref: np.ndarray) -> float:
     """
-    Compute the average cost of the optimal path when aligning two sequences by Dynamic Time Warping (DTW).
+    Compute the average cost of the optimal path w.r.t. the reference audio by Dynamic Time Warping (DTW).
     """
-    dist, _, _, path = dtw(query, ref, dist=lambda x, y: norm(x - y))
-    avg_cost = dist / len(path[0])
+    dist, _, _, _ = dtw(query, ref, dist=lambda x, y: norm(x - y))
+    avg_cost = dist / len(ref)
     return avg_cost
