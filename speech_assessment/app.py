@@ -6,13 +6,12 @@
 import warnings
 from flask_cors import CORS
 import os
-from flask import json
 from werkzeug.exceptions import HTTPException
 from utils import compute_discrepancy
 from flask import Flask, abort, request, jsonify
 import logging
 from werkzeug.datastructures import FileStorage
-
+from io import BytesIO
 warnings.filterwarnings("ignore")
 
 app = Flask(__name__)
@@ -29,26 +28,33 @@ def generate_audio_file(audio: FileStorage, name: str) -> str:
 
 @app.errorhandler(HTTPException)
 def handle_exception(e):
-    response = jsonify({'message': e.description, 'code': e.code})
-    return response
+    # 1. Create your JSON payload
+    payload = {
+        'message': e.description, 
+        'code': e.code
+    }
+    
+    # 2. Return a tuple: (JSON response, Status Code integer)
+    # This forces Flask to update the actual network status header!
+    return jsonify(payload), e.code
+
 
 @app.route("/api/discrepancy_score", methods=["POST"])
 def get_discrepancy_score():
     query_audio = request.files["query_audio"]
     ref_audio = request.files["reference_audio"]
-    query_audio_path = generate_audio_file(query_audio, "query")
-    ref_audio_path = generate_audio_file(ref_audio, "ref")
+    query_stream = BytesIO(query_audio.read())
+    query_stream.seek(0)
+    ref_stream = BytesIO(ref_audio.read())
+    ref_stream.seek(0)
     try:
-        response = compute_discrepancy(query_audio_path, ref_audio_path)
+        response = compute_discrepancy(query_stream, ref_stream)
+        if response.status != 200:
+            abort(response.status, response.message)
+        return jsonify({"score": response.score})
     except Exception as e:
         app.logger.error(e)
         abort(500, str(e))
-    finally:
-        os.remove(query_audio_path)
-        os.remove(ref_audio_path)
-    if response.status != 200:
-        abort(response.status, response.message)
-    return jsonify({"score": response.score})
 
 
 @app.route("/health", methods=["GET"])
