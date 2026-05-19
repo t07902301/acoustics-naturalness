@@ -4,7 +4,7 @@ import numpy as np
 from dtw.dtw import dtw
 import logging
 import pydantic
-
+from io import BytesIO
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
@@ -17,22 +17,22 @@ class ScoreResponse(pydantic.BaseModel):
     message: str = "Success"
     status: int = 200
 
-def compute_discrepancy(query_audio_file: str, ref_audio_file: str) -> ScoreResponse:
-    # Load query audio file
+def compute_discrepancy(query_stream: BytesIO, ref_stream: BytesIO) -> ScoreResponse:
+    # Load query stream
     try:
-        query_time_series, query_sample_rate = librosa.load(query_audio_file)
-    except Exception:
-        logger.error(f"Can't load {query_audio_file}")
+        query_time_series, query_sample_rate = librosa.load(query_stream)
+    except Exception as e:
+        logger.error(f"Can't load the query audio: {e}")
         return ScoreResponse(
-            message="the server can't load the user's recording.", status=500
+            message="the server can't load the query recording.", status=500
         )
-    # Load reference audio file
+    # Load reference stream
     try:
-        ref_time_series, ref_sample_rate = librosa.load(ref_audio_file)
+        ref_time_series, ref_sample_rate = librosa.load(ref_stream)  
     except Exception:
-        logger.error(f"Can't load {ref_audio_file}")
+        logger.error("Can't load the reference audio")
         return ScoreResponse(
-            message="the server can't load synthetic audio", status=500
+            message="the server can't load the reference audio", status=500
         )
     # Compute query's MFCC features and check if the audio is too long
     query_mfcc = librosa.feature.mfcc(
@@ -41,24 +41,24 @@ def compute_discrepancy(query_audio_file: str, ref_audio_file: str) -> ScoreResp
     try:
         assert query_mfcc.shape[1] < 1000
     except Exception:
-        logger.error(f"{query_audio_file} too long: {query_mfcc.shape[1]}")
+        logger.error(f"query stream is too long: {query_mfcc.shape[1]}")
         return ScoreResponse(message="the user's recording is too long", status=500)
     try:
         assert query_mfcc.shape[1] > 1
     except Exception:
-        logger.error(f"{query_audio_file} too short: {query_mfcc.shape[1]}")
+        logger.error(f"query stream is too short: {query_mfcc.shape[1]}")
         return ScoreResponse(message="the user's recording is too short", status=500)
     # Compute reference's MFCC features and check if the audio is too long
     ref_mfcc = librosa.feature.mfcc(y=ref_time_series, sr=ref_sample_rate, n_mfcc=13)
     try:
         assert ref_mfcc.shape[1] < 1000
     except Exception:
-        logger.error(f"{ref_audio_file} too long: {ref_mfcc.shape[1]}")
+        logger.error(f"reference stream is too long: {ref_mfcc.shape[1]}")
         return ScoreResponse(message="the synthetic audio is too long", status=500)
     try:
         assert ref_mfcc.shape[1] > 1
     except Exception:
-        logger.error(f"{ref_audio_file} too short: {ref_mfcc.shape[1]}")
+        logger.error(f"reference stream is too short: {ref_mfcc.shape[1]}")
         return ScoreResponse(message="the synthetic audio is too short", status=500)
     # Compute discrepancy score
     logger.info(f"query MFCC shape: {query_mfcc.shape}, ref MFCC shape: {ref_mfcc.shape}")

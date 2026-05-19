@@ -11,12 +11,12 @@ services:
     volumes:
       - ./speech_assessment:/models       # Mount local directory to container for live updates
       # - ./audios:/data
-    healthcheck:
-      test: ["CMD", "curl", "--fail", "http://localhost:6000/health"]
-      interval: 600s
-      timeout: 60s
-      # retries: 1
-      start_period: 10s
+    # healthcheck:
+    #   test: ["CMD", "curl", "--fail", "http://localhost:6000/health"]
+    #   interval: 600s
+    #   timeout: 60s
+    #   # retries: 1
+    #   start_period: 10s
     # restart: always
     # volumes:
     #   - ./speech_assessment/file_buffer:/app/file_buffer
